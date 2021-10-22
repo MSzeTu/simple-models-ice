@@ -79,16 +79,15 @@ const hostPage3 = (req, res) => {
   res.render('page3');
 };
 
+const hostPage4 = (req, res) => { //Hosts the Dog List
+  const callback = (err, doc) => {
+    if (err) {
+      return res.status(500).json({ err });
+    }
 
-const hostPage4 = (req, res) => {
-  const callback= (err, doc) => {
-    if(err){
-    return res.status(500).json({err});
-  }
-
-  return res.render('page4', {dogs: doc});
-}
-readAllDogs(req, res, callback);
+    return res.render('page4', { dogs: doc });
+  };
+  readAllDogs(req, res, callback);
 };
 
 const getName = (req, res) => {
@@ -127,7 +126,7 @@ const setName = (req, res) => {
   return res;
 };
 
-const setNameDog = (req, res) => { // Sets name
+const setNameDog = (req, res) => { // Sets name of dog
   if (!req.body.name || !req.body.breed || !req.body.age) {
     return res.status(400).json({ error: 'name, breed, and age all required' });
   }
@@ -137,9 +136,13 @@ const setNameDog = (req, res) => { // Sets name
     if (err) {
       return res.status(500).json({ err });
     }
-    if (doc.name === name) {
-      return res.status(400).json({ error: 'Dog already exists' });
-    }});
+    if (doc) { //only checks for existing if there is actually something to check
+      if (doc.name === name) {
+        return res.status(400).json({ error: 'Dog already exists' }); //aborts if it exists
+      }
+    }
+    return res;
+  });
   const dogData = {
     name,
     age: req.body.age,
@@ -149,7 +152,7 @@ const setNameDog = (req, res) => { // Sets name
   const newDog = new Dog(dogData);
   const savePromise = newDog.save();
 
-  savePromise.then(() => {
+  savePromise.then(() => { //save the new dog
     lastAddedDog = newDog;
     res.json({
       name: lastAddedDog.name,
@@ -182,7 +185,7 @@ const searchName = (req, res) => {
   });
 };
 
-const searchNameDog = (req, res) => {
+const searchNameDog = (req, res) => { //Searchs for a Dog by name
   if (!req.query.name) {
     return res.status(400).json({ error: 'Name is required to perform a search' });
   }
@@ -194,12 +197,13 @@ const searchNameDog = (req, res) => {
     if (!doc) {
       return res.status(404).json({ error: 'No dog found' });
     }
-    doc.age++;
-    const savePromise = doc.save();
+    const newDog = doc; //Make new object so we can increment name
+    newDog.age++;
+    const savePromise = newDog.save();
     savePromise.then(() => res.json({
-      name: doc.name,
-      age: doc.age,
-      breed: doc.breed,
+      name: newDog.name,
+      age: newDog.age,
+      breed: newDog.breed,
     }));
 
     savePromise.catch(() => {
@@ -223,7 +227,7 @@ const updateLast = (req, res) => {
   });
 };
 
-const notFound = (req, res) => {
+const notFound = (req, res) => { //Not found
   res.status(404).render('notFound', {
     page: req.url,
   });
